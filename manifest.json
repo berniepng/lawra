@@ -1,0 +1,50 @@
+{
+  "active-mobility-act-2017.html": {
+    "doc_id": "ama2017",
+    "title": "Active Mobility Act 2017",
+    "source_url": "https://sso.agc.gov.sg/Act/AMA2017",
+    "version_date": "06 Jun 2026",
+    "doc_type": "Act",
+    "label_prefix": "s"
+  },
+  "highway-code.html": {
+    "doc_id": "highway_code",
+    "title": "Highway Code",
+    "source_url": "https://sso.agc.gov.sg/SL/RTA1961-R11",
+    "version_date": "06 Jun 2026",
+    "doc_type": "Code",
+    "label_prefix": "para"
+  },
+  "motor-vehicles-third-party-risks-and-compensation-act-1960.html": {
+    "doc_id": "mvtprc1960",
+    "title": "Motor Vehicles (Third-Party Risks and Compensation) Act 1960",
+    "source_url": "https://sso.agc.gov.sg/Act/MVTPRCA1960",
+    "version_date": "06 Jun 2026",
+    "doc_type": "Act",
+    "label_prefix": "s"
+  },
+  "parking-places-act-1974.html": {
+    "doc_id": "ppa1974",
+    "title": "Parking Places Act 1974",
+    "source_url": "https://sso.agc.gov.sg/Act/PPA1974",
+    "version_date": "06 Jun 2026",
+    "doc_type": "Act",
+    "label_prefix": "s"
+  },
+  "road-traffic-act-1961.html": {
+    "doc_id": "rta1961",
+    "title": "Road Traffic Act 1961",
+    "source_url": "https://sso.agc.gov.sg/Act/RTA1961",
+    "version_date": "06 Jun 2026",
+    "doc_type": "Act",
+    "label_prefix": "s"
+  },
+  "restriction-of-speed-on-roads.html": {
+    "doc_id": "rta1961_n6",
+    "title": "Road Traffic (Restriction of Speed on Roads) Notification",
+    "source_url": "https://sso.agc.gov.sg/SL/RTA1961-N6",
+    "version_date": "06 Jun 2026",
+    "doc_type": "Rules",
+    "label_prefix": "para"
+  }
+}
