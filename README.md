@@ -69,7 +69,7 @@ Lawra is a **local agentic RAG pipeline** that:
 
 Users interact through:
 
-- **Web app** — served locally at `http://localhost:3000`
+- **Web app** — served locally at `http://localhost:7890`
 - **Telegram bot** — [@the_lawra_bot](https://t.me/the_lawra_bot) (tunnelled via ngrok to the local n8n instance)
 
 Every answer includes the source legislation and section, and a disclaimer that it is based on an unofficial consolidation.
@@ -332,13 +332,13 @@ The bot is accessible at [@the_lawra_bot](https://t.me/the_lawra_bot).
 
 ### Service URLs summary
 
-| Service             | URL                                          | Notes                  |
-| ------------------- | -------------------------------------------- | ---------------------- |
-| Web App             | `http://localhost:7890`                      |                        |
-| n8n Workflow Editor | `http://localhost:5678`                      | localhost only         |
-| Qdrant Dashboard    | `http://localhost:6333/dashboard`            | localhost only         |
-| Ollama API          | `http://localhost:11434`                     |                        |
-| Telegram Bot        | [@the_lawra_bot](https://t.me/the_lawra_bot) | requires ngrok tunnel  |
+| Service             | URL                                          | Notes                 |
+| ------------------- | -------------------------------------------- | --------------------- |
+| Web App             | `http://localhost:7890`                      |                       |
+| n8n Workflow Editor | `http://localhost:5678`                      | localhost only        |
+| Qdrant Dashboard    | `http://localhost:6333/dashboard`            | localhost only        |
+| Ollama API          | `http://localhost:11434`                     |                       |
+| Telegram Bot        | [@the_lawra_bot](https://t.me/the_lawra_bot) | requires ngrok tunnel |
 
 ### Stop everything
 
