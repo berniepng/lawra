@@ -82,7 +82,7 @@ Every answer includes the source legislation and section, and a disclaimer that 
 ┌─────────────────────────────────────────────────────────────────────┐
 │                          User Interfaces                            │
 │                                                                     │
-│   Web App (localhost:3000)          Telegram Bot (@the_lawra_bot)   │
+│   Web App (localhost:7890)          Telegram Bot (@the_lawra_bot)   │
 │   frontend/server.py                n8n Telegram Trigger            │
 └───────────────────────────┬─────────────────────────┬──────────────┘
                             │                         │
