@@ -5,8 +5,8 @@ services:
     image: qdrant/qdrant:latest
     container_name: lawra-qdrant
     ports:
-      - "6333:6333"
-      - "6334:6334"
+      - "127.0.0.1:6333:6333"
+      - "127.0.0.1:6334:6334"
     volumes:
       - qdrant_storage:/qdrant/storage
     restart: unless-stopped
@@ -33,12 +33,12 @@ services:
     image: n8nio/n8n:latest
     container_name: lawra-n8n
     ports:
-      - "5678:5678"
+      - "127.0.0.1:5678:5678"
     environment:
       N8N_HOST:             ${N8N_HOST:-localhost}
       N8N_PORT:             5678
       N8N_PROTOCOL:         ${N8N_PROTOCOL:-http}
-      N8N_SECURE_COOKIE:    false
+      N8N_SECURE_COOKIE:    true
       N8N_ENCRYPTION_KEY:   ${N8N_ENCRYPTION_KEY:?N8N_ENCRYPTION_KEY must be set in .env}
       WEBHOOK_URL:          ${WEBHOOK_URL:-http://localhost:5678/}
       DB_TYPE:                    postgresdb

@@ -40,7 +40,13 @@ except ImportError:
 FRONTEND_DIR = Path(__file__).parent
 EVAL_SCRIPT  = FRONTEND_DIR.parent / "eval" / "lawra_eval.py"
 JUDGE_MODEL  = "gemma4:e2b"   # change here to swap the Ragas evaluation judge
-N8N_URL      = os.environ.get("N8N_URL", "http://localhost:5678/webhook/lawra/query")
+N8N_URL           = os.environ.get("N8N_URL", "http://localhost:5678/webhook/lawra/query")
+N8N_WEBHOOK_TOKEN = os.environ.get("N8N_WEBHOOK_TOKEN", "")  # set in .env, must match n8n Webhook node auth
+
+# CORS: only allow requests from these origins (add extras via ALLOWED_ORIGINS env var, comma-separated)
+_DEFAULT_ORIGINS = {"http://localhost:7890", "http://127.0.0.1:7890"}
+_extra = {o.strip() for o in os.environ.get("ALLOWED_ORIGINS", "").split(",") if o.strip()}
+ALLOWED_ORIGINS = _DEFAULT_ORIGINS | _extra
 
 # Working memory (ChromaDB) — lazy-loaded so server starts even if not installed
 _memory = None
@@ -172,10 +178,15 @@ class LawraHandler(http.server.SimpleHTTPRequestHandler):
                 print(f"Memory search error: {e}")
 
         # 2. Call n8n with query + memory context
+        headers = {}
+        if N8N_WEBHOOK_TOKEN:
+            headers["X-Lawra-Token"] = N8N_WEBHOOK_TOKEN
+
         try:
             r = _requests.post(
                 N8N_URL,
                 json={"query": query, "memory_context": memory_context},
+                headers=headers,
                 timeout=180,
             )
             r.raise_for_status()
@@ -255,9 +266,17 @@ class LawraHandler(http.server.SimpleHTTPRequestHandler):
         self.wfile.write(body)
 
     def _cors_headers(self):
-        self.send_header("Access-Control-Allow-Origin",  "*")
+        origin = self.headers.get("Origin", "")
+        if origin in ALLOWED_ORIGINS:
+            self.send_header("Access-Control-Allow-Origin", origin)
+        else:
+            # Non-browser requests (curl, server-side) have no Origin — allow them
+            # Browser requests from unlisted origins get no ACAO header → blocked
+            if not origin:
+                self.send_header("Access-Control-Allow-Origin", "null")
         self.send_header("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
         self.send_header("Access-Control-Allow-Headers", "Content-Type")
+        self.send_header("Vary", "Origin")
 
     def log_message(self, fmt, *args):
         # Only log API calls and errors to keep terminal readable
@@ -269,7 +288,7 @@ class LawraHandler(http.server.SimpleHTTPRequestHandler):
 # ── Entry point ───────────────────────────────────────────────────────────────
 def main():
     ap = argparse.ArgumentParser(description="Lawra frontend server")
-    ap.add_argument("--port", type=int, default=3000)
+    ap.add_argument("--port", type=int, default=7890)
     args = ap.parse_args()
 
     if not EVAL_SCRIPT.exists():
