@@ -201,21 +201,25 @@ ollama pull gemma4:e2b        # LLM judge for evaluation
 git clone <repo-url>
 cd lawra
 
-# Edit .env — update POSTGRES_PASSWORD and N8N_ENCRYPTION_KEY at minimum
-cp .env .env.local    # keep a backup
+# Copy the example env file and fill in your values
+cp .env.example .env
 ```
 
 Key `.env` values:
 
 ```dotenv
 POSTGRES_PASSWORD=<choose a password>
-N8N_ENCRYPTION_KEY=<generate with: python3 -c "import secrets; print(secrets.token_hex(16))">
+
+# Generate a fresh key — never reuse one from another installation
+N8N_ENCRYPTION_KEY=<generate with: python3 -c "import secrets; print(secrets.token_hex(32))">
 
 # For Telegram support via ngrok:
 N8N_HOST=<your-ngrok-subdomain>.ngrok-free.app
 N8N_PROTOCOL=https
 WEBHOOK_URL=https://<your-ngrok-subdomain>.ngrok-free.app/
 ```
+
+> **Important:** `N8N_ENCRYPTION_KEY` is used to AES-encrypt all credentials stored in n8n. Generate a unique key per installation and never commit a real key to version control. If you lose or change the key after credentials have been saved in n8n, you will need to re-enter them.
 
 ### Step 3 — Start Docker services
 
@@ -225,9 +229,11 @@ docker compose up -d
 
 This starts:
 
-- **Qdrant** on port `6333` (REST) and `6334` (gRPC)
-- **PostgreSQL** on internal network only
-- **n8n** on port `5678`
+- **Qdrant** on `127.0.0.1:6333` (REST) and `127.0.0.1:6334` (gRPC) — localhost only
+- **PostgreSQL** on internal Docker network only
+- **n8n** on `127.0.0.1:5678` — localhost only
+
+All ports are bound to `127.0.0.1` so they are not reachable from other machines on the local network.
 
 Verify: open `http://localhost:5678` and complete the n8n first-run setup.
 
@@ -300,11 +306,11 @@ docker compose up -d
 
 ```bash
 cd frontend
-python server.py              # serves at http://localhost:3000
+python server.py              # serves at http://localhost:7890
 python server.py --port 8080  # alternative port
 ```
 
-Open `http://localhost:3000` in your browser.
+Open `http://localhost:7890` in your browser.
 
 ### Telegram bot
 
@@ -320,17 +326,19 @@ Copy the `https://` URL into your `.env` as `WEBHOOK_URL` and `N8N_HOST`, then r
 docker compose restart n8n
 ```
 
+> **Note:** n8n runs with `N8N_SECURE_COOKIE: true`. This is correct when accessing n8n over the ngrok HTTPS tunnel. For local-only setups (no ngrok), you can set `N8N_SECURE_COOKIE: false` in `docker-compose.yml`.
+
 The bot is accessible at [@the_lawra_bot](https://t.me/the_lawra_bot).
 
 ### Service URLs summary
 
-| Service             | URL                                          |
-| ------------------- | -------------------------------------------- |
-| Web App             | `http://localhost:3000`                      |
-| n8n Workflow Editor | `http://localhost:5678`                      |
-| Qdrant Dashboard    | `http://localhost:6333/dashboard`            |
-| Ollama API          | `http://localhost:11434`                     |
-| Telegram Bot        | [@the_lawra_bot](https://t.me/the_lawra_bot) |
+| Service             | URL                                          | Notes                  |
+| ------------------- | -------------------------------------------- | ---------------------- |
+| Web App             | `http://localhost:7890`                      |                        |
+| n8n Workflow Editor | `http://localhost:5678`                      | localhost only         |
+| Qdrant Dashboard    | `http://localhost:6333/dashboard`            | localhost only         |
+| Ollama API          | `http://localhost:11434`                     |                        |
+| Telegram Bot        | [@the_lawra_bot](https://t.me/the_lawra_bot) | requires ngrok tunnel  |
 
 ### Stop everything
 
