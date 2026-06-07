@@ -4,6 +4,16 @@
 
 Accessible via a locally-hosted web app and a Telegram bot at **[@the_lawra_bot](https://t.me/the_lawra_bot)**.
 
+![Docker](https://img.shields.io/badge/Docker-2496ED?style=for-the-badge&logo=docker&logoColor=white)
+![Ollama](https://img.shields.io/badge/Ollama-000000?style=for-the-badge&logo=ollama&logoColor=white)
+![llama3.1:8b](https://img.shields.io/badge/LLM-llama3.1%3A8b-blueviolet?style=for-the-badge)
+![gemma4:e2b](https://img.shields.io/badge/Judge-gemma4%3Ae2b-orange?style=for-the-badge)
+![n8n](https://img.shields.io/badge/n8n-EA4B71?style=for-the-badge&logo=n8n&logoColor=white)
+![Qdrant](https://img.shields.io/badge/Qdrant-FF4081?style=for-the-badge&logo=qdrant&logoColor=white)
+![ChromaDB](https://img.shields.io/badge/ChromaDB-F97316?style=for-the-badge&logo=databricks&logoColor=white)
+![Python](https://img.shields.io/badge/Python-3776AB?style=for-the-badge&logo=python&logoColor=white)
+![Telegram](https://img.shields.io/badge/Telegram%20Bot-@the__lawra__bot-26A5E4?style=for-the-badge&logo=telegram&logoColor=white)
+
 ---
 
 ## Table of Contents
