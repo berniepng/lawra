@@ -14,6 +14,8 @@ Accessible via a locally-hosted web app and a Telegram bot at **[@the_lawra_bot]
 ![Python](https://img.shields.io/badge/Python-3776AB?style=for-the-badge&logo=python&logoColor=white)
 ![Telegram](https://img.shields.io/badge/Telegram%20Bot-@the__lawra__bot-26A5E4?style=for-the-badge&logo=telegram&logoColor=white)
 
+![Lawra Cover Art](_img/github-lawra.png)
+
 ---
 
 ## Table of Contents
@@ -35,14 +37,14 @@ Accessible via a locally-hosted web app and a Telegram bot at **[@the_lawra_bot]
 
 Singapore's road traffic legislation is spread across multiple statutes, subsidiary legislation, and codes — all publicly available on the Singapore Statutes Online (SSO) portal, but individually dense and hard to navigate quickly:
 
-| Document | Coverage |
-|---|---|
-| Road Traffic Act 1961 | Primary offences, licensing, enforcement |
-| Highway Code | Rules of the road for all road users |
-| Active Mobility Act 2017 | PMDs, PABs, shared paths |
-| Motor Vehicles (Third-Party Risks & Compensation) Act 1960 | Compulsory insurance |
-| Parking Places Act 1974 | Parking regulation & LTA authority |
-| Road Traffic (Restriction of Speed on Roads) Notification | Speed limits by zone |
+| Document                                                   | Coverage                                 |
+| ---------------------------------------------------------- | ---------------------------------------- |
+| Road Traffic Act 1961                                      | Primary offences, licensing, enforcement |
+| Highway Code                                               | Rules of the road for all road users     |
+| Active Mobility Act 2017                                   | PMDs, PABs, shared paths                 |
+| Motor Vehicles (Third-Party Risks & Compensation) Act 1960 | Compulsory insurance                     |
+| Parking Places Act 1974                                    | Parking regulation & LTA authority       |
+| Road Traffic (Restriction of Speed on Roads) Notification  | Speed limits by zone                     |
 
 **The problem**: Members of the public, drivers, and road users often have specific, time-sensitive questions ("What is the penalty for drink driving?", "Can I ride my e-scooter here?") but:
 
@@ -66,6 +68,7 @@ Lawra is a **local agentic RAG pipeline** that:
 5. **Evaluates** its own quality automatically using RAGAS metrics with a local LLM judge
 
 Users interact through:
+
 - **Web app** — served locally at `http://localhost:3000`
 - **Telegram bot** — [@the_lawra_bot](https://t.me/the_lawra_bot) (tunnelled via ngrok to the local n8n instance)
 
@@ -140,21 +143,21 @@ Webhook / Telegram Response
 
 ## 4. Tech Stack
 
-| Layer | Technology | Purpose |
-|---|---|---|
-| **Container orchestration** | Docker + Docker Compose | Reproducible local deployment of all services |
-| **Workflow engine** | [n8n](https://n8n.io) | Visual agentic pipeline; handles webhooks, Telegram, HTTP calls |
-| **LLM runtime** | [Ollama](https://ollama.ai) | Runs LLMs locally; no GPU cloud required |
-| **Primary LLM** | `llama3.1:8b` | Generates grounded answers from retrieved legal text |
-| **LLM Judge** | `gemma4:e2b` | Evaluates answer quality via RAGAS (separate from the answering model) |
-| **Embedding model** | `nomic-embed-text` | Encodes queries and legislation chunks into dense vectors |
-| **Vector store** | [Qdrant](https://qdrant.tech) | Stores and retrieves legislation chunks by semantic similarity |
-| **Session memory** | [ChromaDB](https://www.trychroma.com) | In-process semantic memory for multi-turn conversation context |
-| **n8n database** | PostgreSQL 16 | Stores n8n workflow state, credentials, and execution history |
-| **Ingestion** | Python + BeautifulSoup + lxml | Parses SSO print-HTML, chunks by section, upserts to Qdrant |
-| **Frontend server** | Python `http.server` | Serves the web UI and proxies queries through memory → n8n |
-| **Tunnel** | [ngrok](https://ngrok.com) | Exposes local n8n webhook to Telegram's HTTPS callback |
-| **Evaluation** | [RAGAS](https://ragas.io) + LangChain | Automated RAG quality measurement against a golden dataset |
+| Layer                       | Technology                            | Purpose                                                                |
+| --------------------------- | ------------------------------------- | ---------------------------------------------------------------------- |
+| **Container orchestration** | Docker + Docker Compose               | Reproducible local deployment of all services                          |
+| **Workflow engine**         | [n8n](https://n8n.io)                 | Visual agentic pipeline; handles webhooks, Telegram, HTTP calls        |
+| **LLM runtime**             | [Ollama](https://ollama.ai)           | Runs LLMs locally; no GPU cloud required                               |
+| **Primary LLM**             | `llama3.1:8b`                         | Generates grounded answers from retrieved legal text                   |
+| **LLM Judge**               | `gemma4:e2b`                          | Evaluates answer quality via RAGAS (separate from the answering model) |
+| **Embedding model**         | `nomic-embed-text`                    | Encodes queries and legislation chunks into dense vectors              |
+| **Vector store**            | [Qdrant](https://qdrant.tech)         | Stores and retrieves legislation chunks by semantic similarity         |
+| **Session memory**          | [ChromaDB](https://www.trychroma.com) | In-process semantic memory for multi-turn conversation context         |
+| **n8n database**            | PostgreSQL 16                         | Stores n8n workflow state, credentials, and execution history          |
+| **Ingestion**               | Python + BeautifulSoup + lxml         | Parses SSO print-HTML, chunks by section, upserts to Qdrant            |
+| **Frontend server**         | Python `http.server`                  | Serves the web UI and proxies queries through memory → n8n             |
+| **Tunnel**                  | [ngrok](https://ngrok.com)            | Exposes local n8n webhook to Telegram's HTTPS callback                 |
+| **Evaluation**              | [RAGAS](https://ragas.io) + LangChain | Automated RAG quality measurement against a golden dataset             |
 
 ---
 
@@ -162,14 +165,14 @@ Webhook / Telegram Response
 
 Six Singapore road traffic documents are indexed, downloaded from [Singapore Statutes Online (SSO)](https://sso.agc.gov.sg):
 
-| File | Title | Doc Type |
-|---|---|---|
-| `road-traffic-act-1961.html` | Road Traffic Act 1961 | Act |
-| `highway-code.html` | Highway Code | Code (grouped by Part) |
-| `active-mobility-act-2017.html` | Active Mobility Act 2017 | Act |
-| `motor-vehicles-third-party-risks-and-compensation-act-1960.html` | Motor Vehicles (Third-Party Risks & Compensation) Act 1960 | Act |
-| `parking-places-act-1974.html` | Parking Places Act 1974 | Act |
-| `restriction-of-speed-on-roads.html` | Road Traffic (Restriction of Speed on Roads) Notification | Rules |
+| File                                                              | Title                                                      | Doc Type               |
+| ----------------------------------------------------------------- | ---------------------------------------------------------- | ---------------------- |
+| `road-traffic-act-1961.html`                                      | Road Traffic Act 1961                                      | Act                    |
+| `highway-code.html`                                               | Highway Code                                               | Code (grouped by Part) |
+| `active-mobility-act-2017.html`                                   | Active Mobility Act 2017                                   | Act                    |
+| `motor-vehicles-third-party-risks-and-compensation-act-1960.html` | Motor Vehicles (Third-Party Risks & Compensation) Act 1960 | Act                    |
+| `parking-places-act-1974.html`                                    | Parking Places Act 1974                                    | Act                    |
+| `restriction-of-speed-on-roads.html`                              | Road Traffic (Restriction of Speed on Roads) Notification  | Rules                  |
 
 **Chunking strategy**: Acts and Rules are chunked per section (one chunk per provision). The Highway Code uses grouped chunking (one chunk per Part) because its provisions are short. Long provisions are sub-chunked with 200-character overlap.
 
@@ -221,6 +224,7 @@ docker compose up -d
 ```
 
 This starts:
+
 - **Qdrant** on port `6333` (REST) and `6334` (gRPC)
 - **PostgreSQL** on internal network only
 - **n8n** on port `5678`
@@ -320,13 +324,13 @@ The bot is accessible at [@the_lawra_bot](https://t.me/the_lawra_bot).
 
 ### Service URLs summary
 
-| Service | URL |
-|---|---|
-| Web App | `http://localhost:3000` |
-| n8n Workflow Editor | `http://localhost:5678` |
-| Qdrant Dashboard | `http://localhost:6333/dashboard` |
-| Ollama API | `http://localhost:11434` |
-| Telegram Bot | [@the_lawra_bot](https://t.me/the_lawra_bot) |
+| Service             | URL                                          |
+| ------------------- | -------------------------------------------- |
+| Web App             | `http://localhost:3000`                      |
+| n8n Workflow Editor | `http://localhost:5678`                      |
+| Qdrant Dashboard    | `http://localhost:6333/dashboard`            |
+| Ollama API          | `http://localhost:11434`                     |
+| Telegram Bot        | [@the_lawra_bot](https://t.me/the_lawra_bot) |
 
 ### Stop everything
 
@@ -343,12 +347,12 @@ Lawra includes a RAGAS-based evaluation harness that measures RAG quality agains
 
 ### Metrics
 
-| Metric | What it measures |
-|---|---|
-| **Faithfulness** | Hallucination resistance — is the answer grounded in retrieved text? |
-| **Answer Relevancy** | Does the answer address the question asked? |
-| **Context Precision** | Are the most relevant chunks ranked highest? |
-| **Context Recall** | Are all necessary chunks retrieved? |
+| Metric                | What it measures                                                     |
+| --------------------- | -------------------------------------------------------------------- |
+| **Faithfulness**      | Hallucination resistance — is the answer grounded in retrieved text? |
+| **Answer Relevancy**  | Does the answer address the question asked?                          |
+| **Context Precision** | Are the most relevant chunks ranked highest?                         |
+| **Context Recall**    | Are all necessary chunks retrieved?                                  |
 
 ### Running evaluations
 
@@ -405,26 +409,31 @@ You can also trigger evaluation from the web UI without the command line.
 ## 10. Future Enhancements
 
 ### Retrieval Quality
+
 - [ ] **Hybrid search**: combine dense vector search with BM25 keyword search (Qdrant supports this natively) to improve recall for exact statutory references like "s 67" or "para 2"
 - [ ] **Re-ranking**: add a cross-encoder re-ranker step after initial retrieval to improve context precision
 - [ ] **Multi-vector retrieval**: store both passage-level and document-level embeddings for coarse-to-fine retrieval
 
 ### Knowledge Base
+
 - [ ] **Expanded coverage**: add subsidiary legislation, LTA circulars, and Traffic Police advisories
 - [ ] **Automated SSO sync**: scheduled ingestion pipeline that detects and re-ingests amended legislation
 - [ ] **Version-aware retrieval**: surface the `version_date` of retrieved chunks and warn users when legislation may have been updated
 
 ### Agentic Capabilities
+
 - [ ] **Multi-hop reasoning**: for questions that span multiple acts (e.g., "Can I use a PAB on a road and what insurance do I need?"), implement an agent loop that issues multiple retrieval steps
 - [ ] **Tool use**: give the agent access to tools for calculating penalties (e.g., with demerit point tables) or checking public holiday dates for offence context
 - [ ] **Researcher agent**: DuckDuckGo search integration for questions about LTA advisories and press releases not in the statutory corpus
 
 ### User Experience
+
 - [ ] **Voice input/output**: speech-to-text for hands-free queries (relevant for drivers)
 - [ ] **Citation deep-links**: link source citations directly to the specific SSO page and section
 - [ ] **Multi-language support**: Mandarin, Malay, and Tamil responses for accessibility
 
 ### Operations
+
 - [ ] **Containerised frontend**: Dockerfile for `frontend/server.py` so the whole stack is `docker compose up`
 - [ ] **Persistent ngrok domain**: move to a stable domain for the Telegram webhook instead of ephemeral ngrok URLs
 - [ ] **Structured logging & tracing**: integrate OpenTelemetry or Langfuse for query-level observability
