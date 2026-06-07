@@ -1,0 +1,247 @@
+{
+  "run_id": "20260606T222558",
+  "timestamp": "2026-06-06T22:25:58.636999+00:00",
+  "llm_model": "llama3.1:8b",
+  "judge_model": "llama3.1:8b",
+  "embed_model": "nomic-embed-text",
+  "collection": "lawra",
+  "num_questions": 5,
+  "scores": {
+    "faithfulness": NaN,
+    "answer_relevancy": NaN,
+    "context_precision": 1.0,
+    "context_recall": 1.0
+  },
+  "per_question": [
+    {
+      "question": "What is the penalty for drink driving in Singapore for a first conviction?",
+      "answer": "The penalty for drink driving in Singapore for a first conviction is a fine of not less than $2,000 and not more than $10,000 or to imprisonment for a term not exceeding 12 months or to both. [Road Traffic Act 1961 — s 67(1)] \n\nAdditionally, the court convicting the person is to order that the person be disqualified from holding or obtaining a driving licence for a period of 2 years starting on the date of the person’s conviction. [Road Traffic Act 1961 — s 67(2)(a)]",
+      "ground_truth": "A fine of not less than $2,000 and not more than $10,000 or imprisonment for a term not exceeding 12 months or both. For a second or subsequent conviction, a fine of not less than $5,000 and not more than $20,000 and imprisonment for a term not exceeding 2 years.",
+      "sources": [
+        {
+          "rank": 1,
+          "score": 0.7177,
+          "title": "Road Traffic Act 1961",
+          "section_label": "s 67",
+          "source_url": "https://sso.agc.gov.sg/Act/RTA1961"
+        },
+        {
+          "rank": 2,
+          "score": 0.7088,
+          "title": "Road Traffic Act 1961",
+          "section_label": "s 84",
+          "source_url": "https://sso.agc.gov.sg/Act/RTA1961"
+        },
+        {
+          "rank": 3,
+          "score": 0.708,
+          "title": "Road Traffic Act 1961",
+          "section_label": "s 68",
+          "source_url": "https://sso.agc.gov.sg/Act/RTA1961"
+        },
+        {
+          "rank": 4,
+          "score": 0.706,
+          "title": "Road Traffic Act 1961",
+          "section_label": "s 68",
+          "source_url": "https://sso.agc.gov.sg/Act/RTA1961"
+        },
+        {
+          "rank": 5,
+          "score": 0.7015,
+          "title": "Road Traffic Act 1961",
+          "section_label": "s 67",
+          "source_url": "https://sso.agc.gov.sg/Act/RTA1961"
+        }
+      ],
+      "faithfulness": null,
+      "answer_relevancy": null,
+      "context_precision": null,
+      "context_recall": null
+    },
+    {
+      "question": "What is the speed limit in a school zone in Singapore?",
+      "answer": "According to Source 2 [Road Traffic (Restriction of Speed on Roads) Notification — para 2], the speed limit in a school zone is 40 kilometres per hour, if the traffic sign set out in diagram 12A in Part I of the Schedule to the Road Traffic (Traffic Signs) Rules (R 33) is used to indicate the beginning of the school zone. [Document: Road Traffic (Restriction of Speed on Roads) Notification — para 2]",
+      "ground_truth": "The speed of all motor vehicles travelling along any road or part of a road in a school zone must not exceed 40 kilometres per hour.",
+      "sources": [
+        {
+          "rank": 1,
+          "score": 0.7882,
+          "title": "Road Traffic (Restriction of Speed on Roads) Notification",
+          "section_label": "para 2",
+          "source_url": "https://sso.agc.gov.sg/SL/RTA1961-N6"
+        },
+        {
+          "rank": 2,
+          "score": 0.757,
+          "title": "Road Traffic (Restriction of Speed on Roads) Notification",
+          "section_label": "para 2",
+          "source_url": "https://sso.agc.gov.sg/SL/RTA1961-N6"
+        },
+        {
+          "rank": 3,
+          "score": 0.6842,
+          "title": "Road Traffic Act 1961",
+          "section_label": "s 63",
+          "source_url": "https://sso.agc.gov.sg/Act/RTA1961"
+        },
+        {
+          "rank": 4,
+          "score": 0.6546,
+          "title": "Active Mobility Act 2017",
+          "section_label": "s 21",
+          "source_url": "https://sso.agc.gov.sg/Act/AMA2017"
+        },
+        {
+          "rank": 5,
+          "score": 0.6299,
+          "title": "Road Traffic Act 1961",
+          "section_label": "s 65",
+          "source_url": "https://sso.agc.gov.sg/Act/RTA1961"
+        }
+      ],
+      "faithfulness": null,
+      "answer_relevancy": null,
+      "context_precision": null,
+      "context_recall": null
+    },
+    {
+      "question": "What is the default speed limit on roads in Singapore?",
+      "answer": "According to Source 1 [Road Traffic (Restriction of Speed on Roads) Notification — para 2], the default speed limit on roads in Singapore, except for specific areas mentioned in sub-paragraphs (2), (3), and (3A), is 50 kilometres per hour.\n\n[Source 1, Road Traffic (Restriction of Speed on Roads) Notification — para 2(1)(b)]",
+      "ground_truth": "The default speed limit is 50 kilometres per hour for motor vehicles on any road not otherwise specified.",
+      "sources": [
+        {
+          "rank": 1,
+          "score": 0.7687,
+          "title": "Road Traffic (Restriction of Speed on Roads) Notification",
+          "section_label": "para 2",
+          "source_url": "https://sso.agc.gov.sg/SL/RTA1961-N6"
+        },
+        {
+          "rank": 2,
+          "score": 0.7251,
+          "title": "Road Traffic Act 1961",
+          "section_label": "s 63",
+          "source_url": "https://sso.agc.gov.sg/Act/RTA1961"
+        },
+        {
+          "rank": 3,
+          "score": 0.694,
+          "title": "Active Mobility Act 2017",
+          "section_label": "s 21",
+          "source_url": "https://sso.agc.gov.sg/Act/AMA2017"
+        },
+        {
+          "rank": 4,
+          "score": 0.6831,
+          "title": "Highway Code",
+          "section_label": "ROAD USERS ON WHEEL",
+          "source_url": "https://sso.agc.gov.sg/SL/RTA1961-R11"
+        },
+        {
+          "rank": 5,
+          "score": 0.679,
+          "title": "Road Traffic (Restriction of Speed on Roads) Notification",
+          "section_label": "para 2",
+          "source_url": "https://sso.agc.gov.sg/SL/RTA1961-N6"
+        }
+      ],
+      "faithfulness": null,
+      "answer_relevancy": null,
+      "context_precision": null,
+      "context_recall": 1.0
+    },
+    {
+      "question": "What is the speed limit in a silver zone?",
+      "answer": "According to Source 1 [Road Traffic (Restriction of Speed on Roads) Notification — para 2], the speed limit in a silver zone is:\n\n\"(3) The speed of all motor vehicles travelling along any road or part of a road in a silver zone must not exceed the speed of — (a) 30 kilometres per hour if the traffic sign set out in diagram 12C(a) or 12C(b) in Part I of the Schedule to the Road Traffic (Traffic Signs) Rules is used to indicate the beginning of the silver zone; or (b) 40 kilometres per hour if the traffic sign set out in diagram 12B(a) or 12B(b) in Part I of the Schedule to the Road Traffic (Traffic Signs) Rules is used to indicate the beginning of the silver zone.\"\n\nTherefore, the speed limit in a silver zone can be either 30 km/h or 40 km/h, depending on the traffic sign used.",
+      "ground_truth": "In a silver zone, the speed limit is 30 kilometres per hour if indicated by the relevant traffic sign, or 40 kilometres per hour if indicated by the alternative prescribed traffic sign.",
+      "sources": [
+        {
+          "rank": 1,
+          "score": 0.7181,
+          "title": "Road Traffic (Restriction of Speed on Roads) Notification",
+          "section_label": "para 2",
+          "source_url": "https://sso.agc.gov.sg/SL/RTA1961-N6"
+        },
+        {
+          "rank": 2,
+          "score": 0.6902,
+          "title": "Road Traffic (Restriction of Speed on Roads) Notification",
+          "section_label": "para 2",
+          "source_url": "https://sso.agc.gov.sg/SL/RTA1961-N6"
+        },
+        {
+          "rank": 3,
+          "score": 0.6721,
+          "title": "Road Traffic Act 1961",
+          "section_label": "s 63",
+          "source_url": "https://sso.agc.gov.sg/Act/RTA1961"
+        },
+        {
+          "rank": 4,
+          "score": 0.6215,
+          "title": "Active Mobility Act 2017",
+          "section_label": "s 21",
+          "source_url": "https://sso.agc.gov.sg/Act/AMA2017"
+        },
+        {
+          "rank": 5,
+          "score": 0.6192,
+          "title": "Highway Code",
+          "section_label": "USE OF CROSSINGS, AND USE OF PERSONAL MOBILITY DEVICES, ETC.",
+          "source_url": "https://sso.agc.gov.sg/SL/RTA1961-R11"
+        }
+      ],
+      "faithfulness": null,
+      "answer_relevancy": null,
+      "context_precision": null,
+      "context_recall": 1.0
+    },
+    {
+      "question": "Is it compulsory to have third-party motor insurance in Singapore?",
+      "answer": "It is compulsory to have third-party motor insurance in Singapore.\n\nSource: [Motor Vehicles (Third-Party Risks and Compensation) Act 1960 — s 3(1)] states that \"it is not lawful for any person to use or to cause or permit any other person to use... a motor vehicle in Singapore; or ... a motor vehicle which is registered in Singapore in any territory specified in the Schedule, unless there is in force in relation to the use of the motor vehicle by that person or that other person (as the case may be) a policy of insurance or a security in respect of third-party risks that complies with the requirements of this Act.\"",
+      "ground_truth": "Yes. A person must not use or permit another to use a motor vehicle unless there is in force a policy of insurance covering third-party risks. It is an offence to use an uninsured motor vehicle.",
+      "sources": [
+        {
+          "rank": 1,
+          "score": 0.7479,
+          "title": "Motor Vehicles (Third-Party Risks and Compensation) Act 1960",
+          "section_label": "s 3",
+          "source_url": "https://sso.agc.gov.sg/Act/MVTPRCA1960"
+        },
+        {
+          "rank": 2,
+          "score": 0.7183,
+          "title": "Motor Vehicles (Third-Party Risks and Compensation) Act 1960",
+          "section_label": "s 3",
+          "source_url": "https://sso.agc.gov.sg/Act/MVTPRCA1960"
+        },
+        {
+          "rank": 3,
+          "score": 0.712,
+          "title": "Motor Vehicles (Third-Party Risks and Compensation) Act 1960",
+          "section_label": "s 14",
+          "source_url": "https://sso.agc.gov.sg/Act/MVTPRCA1960"
+        },
+        {
+          "rank": 4,
+          "score": 0.704,
+          "title": "Motor Vehicles (Third-Party Risks and Compensation) Act 1960",
+          "section_label": "s 9",
+          "source_url": "https://sso.agc.gov.sg/Act/MVTPRCA1960"
+        },
+        {
+          "rank": 5,
+          "score": 0.7016,
+          "title": "Motor Vehicles (Third-Party Risks and Compensation) Act 1960",
+          "section_label": "s 10",
+          "source_url": "https://sso.agc.gov.sg/Act/MVTPRCA1960"
+        }
+      ],
+      "faithfulness": null,
+      "answer_relevancy": null,
+      "context_precision": 0.99999999998,
+      "context_recall": 1.0
+    }
+  ]
+}

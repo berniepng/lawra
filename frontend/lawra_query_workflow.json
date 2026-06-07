@@ -1,0 +1,218 @@
+{
+  "name": "Lawra \u2014 Query & Answer",
+  "nodes": [
+    {
+      "id": "a1b2c3d4-0001-4000-8000-000000000001",
+      "name": "Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        240,
+        300
+      ],
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "lawra/query",
+        "responseMode": "responseNode",
+        "options": {}
+      }
+    },
+    {
+      "id": "a1b2c3d4-0002-4000-8000-000000000002",
+      "name": "Embed Query",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [
+        460,
+        300
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "http://host.docker.internal:11434/api/embeddings",
+        "sendBody": true,
+        "contentType": "json",
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "model",
+              "value": "nomic-embed-text"
+            },
+            {
+              "name": "prompt",
+              "value": "={{ $('Webhook').item.json.body.query }}"
+            }
+          ]
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "a1b2c3d4-0003-4000-8000-000000000003",
+      "name": "Search Qdrant",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [
+        680,
+        300
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "http://qdrant:6333/collections/lawra/points/search",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ vector: $json.embedding, limit: 5, with_payload: true, with_vector: false }) }}",
+        "options": {}
+      }
+    },
+    {
+      "id": "a1b2c3d4-0004-4000-8000-000000000004",
+      "name": "Format Context",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        900,
+        300
+      ],
+      "parameters": {
+        "jsCode": "const results = $input.first().json.result;\nconst query      = $('Webhook').item.json.body.query;\nconst memoryCtx  = $('Webhook').item.json.body.memory_context || '';\n\nlet context = '';\nconst sources = [];\n\nresults.forEach((item, i) => {\n  const { score, payload } = item;\n  const {\n    title, section_label, section_heading,\n    text, source_url, doc_id, version_date\n  } = payload;\n\n  context += `\\n\\n--- Source ${i + 1} [${title} \u2014 ${section_label}] ---\\n`;\n  if (section_heading && section_heading !== section_label) {\n    context += `Heading: ${section_heading}\\n`;\n  }\n  context += text;\n\n  sources.push({\n    rank: i + 1,\n    score: parseFloat(score.toFixed(4)),\n    title,\n    section_label,\n    section_heading: section_heading || '',\n    source_url: source_url || '',\n    doc_id: doc_id || '',\n    version_date: version_date || '',\n    text_preview: text.substring(0, 300)\n  });\n});\n\nreturn [{\n  // Pass memory context forward for the LLM node\n  json: {\n    query,\n    context: context.trim(),\n    memory_context: memoryCtx,\n    sources,\n    retrieved_count: results.length,\n    retrieved_at: new Date().toISOString()\n  }\n}];"
+      }
+    },
+    {
+      "id": "a1b2c3d4-0005-4000-8000-000000000005",
+      "name": "Generate Answer",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [
+        1120,
+        300
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "http://host.docker.internal:11434/api/chat",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({\n  model: 'llama3.1:8b',\n  stream: false,\n  options: { temperature: 0.1, num_ctx: 4096 },\n  messages: [\n    {\n      role: 'system',\n      content: `You are Lawra, a Singapore road traffic law assistant. Answer questions using ONLY the legal text provided below.\\n\\nRULES:\\n1. Answer from the retrieved text only \u2014 never from general knowledge.\\n2. Cite every claim with [Document, Section] immediately after the statement.\\n3. If the answer is not in the text, say exactly: \"I cannot find a definitive answer in the provided legislation. Please verify at SSO (https://sso.agc.gov.sg) or consult a qualified legal professional.\"\\n4. Be concise and factually precise \u2014 this is legal information.\\n5. End every response with: \u26a0\ufe0f This is based on an unofficial consolidation. Verify at SSO.`\n    },\n    {\n      role: 'user',\n      content: `Question: ${$json.query}\\n\\nRetrieved legal text:\\n${$json.context}`\n    }\n  ]\n}) }}",
+        "options": {
+          "timeout": 120000
+        }
+      }
+    },
+    {
+      "id": "a1b2c3d4-0006-4000-8000-000000000006",
+      "name": "Format Response",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1340,
+        300
+      ],
+      "parameters": {
+        "jsCode": "const ollama  = $input.first().json;\nconst ctx     = $('Format Context').first().json;\n\nconst answer = ollama.message?.content ?? 'No response generated.';\nconst doneAt = new Date().toISOString();\n\nreturn [{\n  json: {\n    answer,\n    sources: ctx.sources,\n    trace: {\n      query:           ctx.query,\n      retrieved_count: ctx.retrieved_count,\n      retrieved_at:    ctx.retrieved_at,\n      generated_at:    doneAt,\n      model:           ollama.model || 'llama3.1:8b',\n      eval_count:      ollama.eval_count  || null,\n      prompt_tokens:   ollama.prompt_eval_count || null\n    },\n    disclaimer: 'UNOFFICIAL consolidation. Authoritative text is the Government Gazette. Verify at SSO: https://sso.agc.gov.sg'\n  }\n}];"
+      }
+    },
+    {
+      "id": "a1b2c3d4-0007-4000-8000-000000000007",
+      "name": "Respond to Webhook",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [
+        1560,
+        300
+      ],
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ JSON.stringify($json) }}",
+        "options": {
+          "responseCode": 200,
+          "responseHeaders": {
+            "entries": [
+              {
+                "name": "Content-Type",
+                "value": "application/json"
+              }
+            ]
+          }
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Embed Query",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Embed Query": {
+      "main": [
+        [
+          {
+            "node": "Search Qdrant",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Search Qdrant": {
+      "main": [
+        [
+          {
+            "node": "Format Context",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format Context": {
+      "main": [
+        [
+          {
+            "node": "Generate Answer",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate Answer": {
+      "main": [
+        [
+          {
+            "node": "Format Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format Response": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "saveManualExecutions": true,
+    "saveExecutionProgress": true
+  },
+  "tags": [
+    {
+      "name": "lawra"
+    }
+  ]
+}

@@ -1,0 +1,107 @@
+[
+  {
+    "id": "q01",
+    "question": "What is the penalty for drink driving in Singapore for a first conviction?",
+    "ground_truth": "A fine of not less than $2,000 and not more than $10,000 or imprisonment for a term not exceeding 12 months or both. For a second or subsequent conviction, a fine of not less than $5,000 and not more than $20,000 and imprisonment for a term not exceeding 2 years.",
+    "source_labels": ["rta1961 s 67"],
+    "doc_ids": ["rta1961"]
+  },
+  {
+    "id": "q02",
+    "question": "What is the speed limit in a school zone in Singapore?",
+    "ground_truth": "The speed of all motor vehicles travelling along any road or part of a road in a school zone must not exceed 40 kilometres per hour.",
+    "source_labels": ["rta1961_n6 para 2"],
+    "doc_ids": ["rta1961_n6"]
+  },
+  {
+    "id": "q03",
+    "question": "What is the default speed limit on roads in Singapore?",
+    "ground_truth": "The default speed limit is 50 kilometres per hour for motor vehicles on any road not otherwise specified.",
+    "source_labels": ["rta1961_n6 para 2"],
+    "doc_ids": ["rta1961_n6"]
+  },
+  {
+    "id": "q04",
+    "question": "What is the speed limit in a silver zone?",
+    "ground_truth": "In a silver zone, the speed limit is 30 kilometres per hour if indicated by the relevant traffic sign, or 40 kilometres per hour if indicated by the alternative prescribed traffic sign.",
+    "source_labels": ["rta1961_n6 para 2"],
+    "doc_ids": ["rta1961_n6"]
+  },
+  {
+    "id": "q05",
+    "question": "Is it compulsory to have third-party motor insurance in Singapore?",
+    "ground_truth": "Yes. A person must not use or permit another to use a motor vehicle unless there is in force a policy of insurance covering third-party risks. It is an offence to use an uninsured motor vehicle.",
+    "source_labels": ["mvtprc1960 s 3"],
+    "doc_ids": ["mvtprc1960"]
+  },
+  {
+    "id": "q06",
+    "question": "What is the penalty for causing death by reckless or dangerous driving?",
+    "ground_truth": "A person guilty of an offence of causing death by reckless or dangerous driving shall be liable on conviction to imprisonment for a term not exceeding 8 years, and the court shall order disqualification from holding or obtaining a driving licence.",
+    "source_labels": ["rta1961 s 66"],
+    "doc_ids": ["rta1961"]
+  },
+  {
+    "id": "q07",
+    "question": "Can a person ride a PAB on a shared path?",
+    "ground_truth": "A person may ride a PAB on a shared path provided the PAB is registered under the Road Traffic Act 1961 and is not prescribed as banned for use on that shared path by reason of its construction, weight or equipment.",
+    "source_labels": ["ama2017 s 18"],
+    "doc_ids": ["ama2017"]
+  },
+  {
+    "id": "q08",
+    "question": "What is the maximum speed for riding on a public path under the Active Mobility Act?",
+    "ground_truth": "An individual must not ride a bicycle, PAB or personal mobility device on any public path in excess of the maximum speed prescribed for that public path.",
+    "source_labels": ["ama2017 s 21"],
+    "doc_ids": ["ama2017"]
+  },
+  {
+    "id": "q09",
+    "question": "What must a driver do after a road accident involving injury?",
+    "ground_truth": "A driver involved in an accident that causes injury to a person or damage to property must stop, give their name and address and the owner's name and address to anyone reasonably requiring that information, and report the accident to the police.",
+    "source_labels": ["rta1961 s 84"],
+    "doc_ids": ["rta1961"]
+  },
+  {
+    "id": "q10",
+    "question": "What rules apply to pedestrians walking along a road?",
+    "ground_truth": "Pedestrians should use the footpath where available. If there is no footpath, they should walk on the right-hand side of the road facing oncoming traffic, and keep as close as possible to the edge of the road.",
+    "source_labels": ["highway_code para 7"],
+    "doc_ids": ["highway_code"]
+  },
+  {
+    "id": "q11",
+    "question": "What is the penalty for riding a non-compliant personal mobility device on a public path?",
+    "ground_truth": "An individual who rides a non-compliant PMD on a public path shall be guilty of an offence and liable on conviction to a fine not exceeding $10,000 or imprisonment for a term not exceeding 6 months or both. For a repeat offender, a fine not exceeding $20,000 or imprisonment not exceeding 12 months or both.",
+    "source_labels": ["ama2017 s 19"],
+    "doc_ids": ["ama2017"]
+  },
+  {
+    "id": "q12",
+    "question": "What authority is responsible for managing parking places in Singapore?",
+    "ground_truth": "The Land Transport Authority of Singapore (LTA) is the Authority responsible for managing and regulating parking places under the Parking Places Act 1974.",
+    "source_labels": ["ppa1974 s 2"],
+    "doc_ids": ["ppa1974"]
+  },
+  {
+    "id": "q13",
+    "question": "What are the rules for cyclists riding on the road?",
+    "ground_truth": "Cyclists must keep to the left of the road, must not ride more than two abreast except when overtaking, and must not ride in a manner that is dangerous to themselves or other road users.",
+    "source_labels": ["highway_code para 59"],
+    "doc_ids": ["highway_code"]
+  },
+  {
+    "id": "q14",
+    "question": "What is reckless or dangerous driving under the Road Traffic Act?",
+    "ground_truth": "A person drives recklessly or dangerously if the manner of driving falls far below what would be expected of a competent and careful driver, and it would be obvious to a competent and careful driver that driving in that way would be dangerous.",
+    "source_labels": ["rta1961 s 64"],
+    "doc_ids": ["rta1961"]
+  },
+  {
+    "id": "q15",
+    "question": "Can a motor vehicle competition or speed trial take place on a road?",
+    "ground_truth": "No competition or trial of speed involving the use of vehicles may take place on a road except under, and in accordance with the conditions of, a permit granted by the Deputy Commissioner of Police.",
+    "source_labels": ["rta1961 s 116"],
+    "doc_ids": ["rta1961"]
+  }
+]

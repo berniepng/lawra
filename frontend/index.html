@@ -1,0 +1,907 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Lawra — Singapore Road Traffic Law</title>
+  <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Josefin+Sans:wght@300;400;600;700&family=Lora:ital,wght@0,400;0,600;1,400&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            display: ['Josefin Sans', 'sans-serif'],
+            serif:   ['Lora', 'Georgia', 'serif'],
+            mono:    ['JetBrains Mono', 'monospace'],
+          },
+          colors: {
+            bg:      '#0d1117',
+            surface: '#161b22',
+            raised:  '#21262d',
+            border:  '#30363d',
+            accent:  '#2f81f7',
+            gold:    '#d29922',
+            muted:   '#8b949e',
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    * { box-sizing: border-box; }
+    body { background: #0d1117; color: #e6edf3; font-family: 'Josefin Sans', sans-serif; margin: 0; }
+    ::-webkit-scrollbar { width: 4px; height: 4px; }
+    ::-webkit-scrollbar-track { background: #161b22; }
+    ::-webkit-scrollbar-thumb { background: #30363d; border-radius: 4px; }
+    @keyframes blink { 0%,100%{opacity:.2;transform:scale(.8)} 50%{opacity:1;transform:scale(1)} }
+    .dot { animation: blink 1.2s ease-in-out infinite; }
+    .dot:nth-child(2) { animation-delay:.2s }
+    .dot:nth-child(3) { animation-delay:.4s }
+    @keyframes fadeIn { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:translateY(0)} }
+    .msg-in { animation: fadeIn .25s ease forwards; }
+    textarea:focus { outline: none; }
+    input:focus { outline: none; }
+  </style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+
+const { useState, useRef, useEffect, useCallback } = React;
+
+/* ── Session ID (persists for browser tab lifetime) ───────────────────── */
+const SESSION_ID = (() => {
+  try { return sessionStorage.getItem('lawra_sid') || (() => {
+    const id = crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).slice(2);
+    sessionStorage.setItem('lawra_sid', id); return id; })();
+  } catch { return Math.random().toString(36).slice(2); }
+})();
+
+/* ── Config ──────────────────────────────────────────────────────────────── */
+const N8N_URL     = 'http://localhost:5678/webhook/lawra/query'; // direct (fallback)
+const QUERY_URL   = '/api/query';    // memory-augmented proxy (via server.py)
+const USE_MEMORY  = true;            // set false to bypass memory and hit n8n directly
+
+/* ── Icons (inline SVG) ──────────────────────────────────────────────────── */
+const SendIcon = () => (
+  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+  </svg>
+);
+const ScalesIcon = () => (
+  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M12 3v18M3 7l9 4 9-4M3 12l9 4 9-4M3 17l9 4 9-4"/>
+  </svg>
+);
+const ChevronIcon = ({ open }) => (
+  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
+    style={{ transform: open ? 'rotate(180deg)' : 'rotate(0)', transition: 'transform .2s' }}>
+    <polyline points="6 9 12 15 18 9"></polyline>
+  </svg>
+);
+const ExternalIcon = () => (
+  <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
+    <polyline points="15 3 21 3 21 9"></polyline><line x1="10" y1="14" x2="21" y2="3"></line>
+  </svg>
+);
+
+/* ── Helpers ─────────────────────────────────────────────────────────────── */
+const fmt = d => new Date(d).toLocaleTimeString('en-SG', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+const fmtMs = ms => ms >= 1000 ? `${(ms/1000).toFixed(1)}s` : `${ms}ms`;
+const uid = () => Math.random().toString(36).slice(2);
+
+/* ── Source Card ─────────────────────────────────────────────────────────── */
+function SourceCard({ source }) {
+  const [open, setOpen] = useState(false);
+  return (
+    <div style={{ background: '#1c2230', border: '1px solid #2d3748', borderRadius: 6, marginTop: 6, overflow: 'hidden' }}>
+      <button onClick={() => setOpen(o => !o)}
+        style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 8, padding: '7px 10px', background: 'none', border: 'none', color: '#8b949e', cursor: 'pointer', textAlign: 'left' }}>
+        <span style={{ fontFamily: 'JetBrains Mono', fontSize: 10, background: '#2f81f730', color: '#2f81f7', padding: '1px 6px', borderRadius: 3, flexShrink: 0 }}>
+          #{source.rank}
+        </span>
+        <span style={{ fontSize: 12, color: '#c9d1d9', flexGrow: 1, fontFamily: 'Josefin Sans' }}>
+          {source.title}
+        </span>
+        <span style={{ fontFamily: 'JetBrains Mono', fontSize: 10, color: '#d29922', flexShrink: 0 }}>
+          {source.section_label}
+        </span>
+        <span style={{ fontSize: 10, color: '#484f58', flexShrink: 0 }}>
+          {(source.score * 100).toFixed(0)}%
+        </span>
+        <ChevronIcon open={open} />
+      </button>
+      {open && (
+        <div style={{ padding: '0 10px 10px', borderTop: '1px solid #2d3748' }}>
+          {source.section_heading && source.section_heading !== source.section_label && (
+            <p style={{ margin: '8px 0 4px', fontSize: 11, color: '#8b949e', fontStyle: 'italic' }}>{source.section_heading}</p>
+          )}
+          <p style={{ margin: '8px 0 0', fontSize: 12, color: '#8b949e', fontFamily: 'Lora', lineHeight: 1.6 }}>
+            {source.text_preview}…
+          </p>
+          {source.source_url && (
+            <a href={source.source_url} target="_blank" rel="noreferrer"
+              style={{ display: 'inline-flex', alignItems: 'center', gap: 4, marginTop: 8, fontSize: 11, color: '#2f81f7', textDecoration: 'none' }}>
+              View on SSO <ExternalIcon />
+            </a>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* ── Pipeline Trace ──────────────────────────────────────────────────────── */
+function PipelineTrace({ trace }) {
+  const [open, setOpen] = useState(false);
+  if (!trace) return null;
+
+  const start    = trace.startedAt ?? (new Date(trace.generated_at).getTime() - trace.latencyMs);
+  const retriMs  = Math.max(0, Math.round(new Date(trace.retrieved_at).getTime() - start));
+  const genMs    = Math.max(0, Math.round(new Date(trace.generated_at).getTime() - new Date(trace.retrieved_at).getTime()));
+  const embedMs  = Math.round(retriMs * 0.85);   // embed is the bulk of retrieval time
+  const topScore = trace.sources?.[0]?.score;
+
+  const events = [
+    { icon: '🚀', name: 'QUERY_START',  ms: 0,           detail: null,                                color: '#2f81f7' },
+    { icon: '🧠', name: 'MEMORY',       ms: 10,          detail: trace.memory_used ? `${trace.memory_hits} past exchange${trace.memory_hits !== 1 ? 's' : ''} recalled` : 'no relevant history', color: trace.memory_used ? '#3fb950' : '#484f58' },
+    { icon: '🔢', name: 'EMBED',        ms: embedMs,     detail: 'nomic-embed-text · 768 dims',        color: '#bc8cff' },
+    { icon: '🗂️', name: 'RETRIEVE',     ms: retriMs,     detail: `${trace.retrieved_count} chunks · top sim: ${topScore?.toFixed(3) ?? '—'}`, color: '#d29922' },
+    { icon: '🧠', name: 'GENERATE',     ms: retriMs,     detail: trace.model,                          color: '#388bfd' },
+    { icon: '✅', name: 'RESPONSE',     ms: trace.latencyMs, detail: `${trace.prompt_tokens ?? '?'} in · ${trace.eval_count ?? '?'} out`, color: '#3fb950' },
+  ];
+
+  const fmtRel = ms => ms >= 1000 ? `+${(ms/1000).toFixed(2)}s` : `+${ms}ms`;
+
+  return (
+    <div style={{ marginTop: 10 }}>
+      <button onClick={() => setOpen(o => !o)}
+        style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'none', border: 'none',
+          cursor: 'pointer', padding: '3px 0', color: '#484f58', fontFamily: 'JetBrains Mono',
+          fontSize: 10, letterSpacing: 0.5 }}>
+        <span style={{ transition: 'transform .15s', display: 'inline-block',
+          transform: open ? 'rotate(90deg)' : 'none', fontSize: 8 }}>▶</span>
+        PIPELINE · {fmtMs(trace.latencyMs)} total · {trace.retrieved_count} chunks
+      </button>
+
+      {open && (
+        <div style={{ marginTop: 6, padding: '10px 0 6px', borderLeft: '2px solid #21262d',
+          paddingLeft: 12, display: 'flex', flexDirection: 'column', gap: 2 }}>
+          {events.map((e, i) => (
+            <div key={i} className="msg-in" style={{ display: 'flex', alignItems: 'baseline',
+              gap: 8, animationDelay: `${i * 60}ms` }}>
+              <span style={{ fontFamily: 'JetBrains Mono', fontSize: 10,
+                color: '#3fb950', background: '#0d1117', padding: '1px 6px',
+                borderRadius: 3, border: '1px solid #21262d', minWidth: 62,
+                textAlign: 'right', letterSpacing: 0 }}>
+                {fmtRel(e.ms)}
+              </span>
+              <span style={{ fontSize: 11 }}>{e.icon}</span>
+              <span style={{ fontFamily: 'JetBrains Mono', fontSize: 11,
+                color: e.color, fontWeight: 600, letterSpacing: 0.5 }}>
+                {e.name}
+              </span>
+              {e.detail && (
+                <span style={{ fontFamily: 'JetBrains Mono', fontSize: 10,
+                  color: '#484f58' }}>
+                  — {e.detail}
+                </span>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* ── Chat Tab ────────────────────────────────────────────────────────────── */
+function ChatTab({ messages, onSend, isLoading }) {
+  const [input, setInput] = useState('');
+  const bottomRef = useRef(null);
+  const taRef = useRef(null);
+
+  useEffect(() => { bottomRef.current?.scrollIntoView({ behavior: 'smooth' }); }, [messages, isLoading]);
+
+  const submit = () => {
+    const q = input.trim();
+    if (!q || isLoading) return;
+    setInput('');
+    onSend(q);
+  };
+
+  const onKey = e => {
+    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); submit(); }
+  };
+
+  const suggestions = [
+    'What is the penalty for drink driving?',
+    'What is the speed limit in a school zone?',
+    'Can I use my mobile phone while driving?',
+    'Is third-party insurance compulsory?',
+  ];
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+      {/* Messages */}
+      <div style={{ flex: 1, overflowY: 'auto', padding: '24px 0' }}>
+        {messages.length === 0 ? (
+          <div style={{ textAlign: 'center', padding: '60px 24px 40px' }}>
+            <div style={{ marginBottom: 16, opacity: 0.15 }}>
+              <ScalesIcon />
+            </div>
+            <p style={{ color: '#8b949e', fontSize: 14, marginBottom: 24 }}>
+              Ask anything about Singapore road traffic law
+            </p>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, justifyContent: 'center', maxWidth: 560, margin: '0 auto' }}>
+              {suggestions.map(s => (
+                <button key={s} onClick={() => onSend(s)}
+                  style={{ padding: '7px 14px', borderRadius: 20, border: '1px solid #30363d', background: '#161b22', color: '#8b949e', fontSize: 12, cursor: 'pointer', fontFamily: 'Josefin Sans', transition: 'all .15s' }}
+                  onMouseEnter={e => { e.target.style.borderColor='#2f81f7'; e.target.style.color='#c9d1d9'; }}
+                  onMouseLeave={e => { e.target.style.borderColor='#30363d'; e.target.style.color='#8b949e'; }}>
+                  {s}
+                </button>
+              ))}
+            </div>
+          </div>
+        ) : (
+          <div style={{ maxWidth: 740, margin: '0 auto', padding: '0 24px', display: 'flex', flexDirection: 'column', gap: 20 }}>
+            {messages.map(m => (
+              <div key={m.id} className="msg-in">
+                {m.role === 'user' ? (
+                  <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+                    <div style={{ maxWidth: '75%', background: '#1f3150', border: '1px solid #2f4a6e', borderRadius: '16px 16px 4px 16px', padding: '10px 16px' }}>
+                      <p style={{ margin: 0, fontSize: 14, color: '#c9d1d9', lineHeight: 1.5 }}>{m.content}</p>
+                    </div>
+                  </div>
+                ) : (
+                  <div style={{ display: 'flex', gap: 12 }}>
+                    <div style={{ width: 28, height: 28, borderRadius: '50%', background: '#2f81f715', border: '1px solid #2f81f730', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, marginTop: 2 }}>
+                      <span style={{ fontSize: 10, color: '#2f81f7', fontWeight: 700, letterSpacing: 0.5 }}>L</span>
+                    </div>
+                    <div style={{ flex: 1 }}>
+                      {m.trace?.memory_used && (
+                        <span style={{ display: 'inline-block', marginBottom: 8, fontSize: 10,
+                          fontFamily: 'JetBrains Mono', color: '#3fb950',
+                          background: '#0f1a0f', border: '1px solid #238636',
+                          borderRadius: 4, padding: '2px 8px', letterSpacing: 0.5 }}>
+                          🧠 {m.trace.memory_hits} memory recall{m.trace.memory_hits !== 1 ? 's' : ''}
+                        </span>
+                      )}
+                      <p style={{ margin: '0 0 12px', fontSize: 14, fontFamily: 'Lora', lineHeight: 1.75, color: '#e6edf3', whiteSpace: 'pre-wrap' }}>
+                        {m.content}
+                      </p>
+                      {m.sources && m.sources.length > 0 && (
+                        <details style={{ marginTop: 8 }}>
+                          <summary style={{ cursor: 'pointer', fontSize: 12, color: '#8b949e', listStyle: 'none', display: 'flex', alignItems: 'center', gap: 6 }}>
+                            <span style={{ fontSize: 9, color: '#30363d' }}>▶</span>
+                            {m.sources.length} source{m.sources.length > 1 ? 's' : ''} retrieved
+                          </summary>
+                          <div style={{ marginTop: 8 }}>
+                            {m.sources.map(s => <SourceCard key={s.rank} source={s} />)}
+                          </div>
+                        </details>
+                      )}
+                      <PipelineTrace trace={m.trace} />
+                    </div>
+                  </div>
+                )}
+              </div>
+            ))}
+            {isLoading && (
+              <div className="msg-in" style={{ display: 'flex', gap: 12 }}>
+                <div style={{ width: 28, height: 28, borderRadius: '50%', background: '#2f81f715', border: '1px solid #2f81f730', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                  <span style={{ fontSize: 10, color: '#2f81f7', fontWeight: 700 }}>L</span>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 5, paddingTop: 6 }}>
+                  {[0,1,2].map(i => (
+                    <div key={i} className="dot" style={{ width: 6, height: 6, borderRadius: '50%', background: '#2f81f7' }} />
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+        <div ref={bottomRef} />
+      </div>
+
+      {/* Input */}
+      <div style={{ padding: '16px 24px', borderTop: '1px solid #21262d' }}>
+        <div style={{ maxWidth: 740, margin: '0 auto', display: 'flex', gap: 10, alignItems: 'flex-end',
+          background: '#161b22', border: '1px solid #30363d', borderRadius: 12, padding: '10px 12px',
+          transition: 'border-color .15s' }}
+          onFocusCapture={e => e.currentTarget.style.borderColor='#2f81f7'}
+          onBlurCapture={e => e.currentTarget.style.borderColor='#30363d'}>
+          <textarea ref={taRef} value={input} onChange={e => setInput(e.target.value)} onKeyDown={onKey}
+            placeholder="Ask about Singapore road traffic law…"
+            rows={1} style={{ flex: 1, background: 'none', border: 'none', color: '#e6edf3', fontSize: 14,
+              fontFamily: 'Josefin Sans', resize: 'none', lineHeight: 1.5, maxHeight: 120, overflowY: 'auto',
+              paddingTop: 2 }} />
+          <button onClick={submit} disabled={!input.trim() || isLoading}
+            style={{ width: 36, height: 36, borderRadius: 8, border: 'none', cursor: input.trim() && !isLoading ? 'pointer' : 'default',
+              background: input.trim() && !isLoading ? '#2f81f7' : '#21262d',
+              color: input.trim() && !isLoading ? '#fff' : '#484f58',
+              display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, transition: 'all .15s' }}>
+            <SendIcon />
+          </button>
+        </div>
+        <p style={{ textAlign: 'center', fontSize: 10, color: '#484f58', marginTop: 8, fontFamily: 'JetBrains Mono' }}>
+          Unofficial consolidation — verify at SSO · sso.agc.gov.sg
+        </p>
+      </div>
+    </div>
+  );
+}
+
+/* ── Trace Log Tab ───────────────────────────────────────────────────────── */
+function TraceLogTab({ traces }) {
+  const [expanded, setExpanded] = useState(null);
+
+  if (traces.length === 0) {
+    return (
+      <div style={{ textAlign: 'center', padding: '80px 24px', color: '#484f58' }}>
+        <p style={{ fontFamily: 'JetBrains Mono', fontSize: 13 }}>No executions yet.</p>
+        <p style={{ fontSize: 12, marginTop: 8 }}>Send a message in the Chat tab to see trace data here.</p>
+      </div>
+    );
+  }
+
+  return (
+    <div style={{ padding: '24px', overflowY: 'auto', height: '100%' }}>
+      <div style={{ maxWidth: 900, margin: '0 auto' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: '80px 1fr 80px 70px 70px', gap: '0 16px',
+          padding: '8px 16px', borderBottom: '1px solid #30363d', marginBottom: 8 }}>
+          {['Time', 'Query', 'Chunks', 'Latency', 'Tokens'].map(h => (
+            <span key={h} style={{ fontSize: 10, color: '#484f58', fontFamily: 'JetBrains Mono', textTransform: 'uppercase', letterSpacing: 1 }}>{h}</span>
+          ))}
+        </div>
+        {[...traces].reverse().map((t, i) => (
+          <div key={t.id}>
+            <div onClick={() => setExpanded(expanded === t.id ? null : t.id)}
+              style={{ display: 'grid', gridTemplateColumns: '80px 1fr 80px 70px 70px', gap: '0 16px',
+                padding: '12px 16px', cursor: 'pointer', borderRadius: 8, transition: 'background .1s',
+                background: expanded === t.id ? '#161b22' : 'transparent' }}
+              onMouseEnter={e => { if (expanded !== t.id) e.currentTarget.style.background='#161b2280'; }}
+              onMouseLeave={e => { if (expanded !== t.id) e.currentTarget.style.background='transparent'; }}>
+              <span style={{ fontSize: 11, color: '#8b949e', fontFamily: 'JetBrains Mono' }}>{t.time}</span>
+              <span style={{ fontSize: 13, color: '#c9d1d9', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{t.query}</span>
+              <span style={{ fontSize: 12, color: '#8b949e', textAlign: 'center' }}>{t.retrieved_count}</span>
+              <span style={{ fontSize: 12, fontFamily: 'JetBrains Mono', color: t.latencyMs > 20000 ? '#f85149' : t.latencyMs > 10000 ? '#d29922' : '#3fb950' }}>
+                {fmtMs(t.latencyMs)}
+              </span>
+              <span style={{ fontSize: 12, fontFamily: 'JetBrains Mono', color: '#8b949e' }}>{t.prompt_tokens ?? '—'}</span>
+            </div>
+            {expanded === t.id && (
+              <div style={{ margin: '0 16px 12px', padding: 16, background: '#0d1117', borderRadius: 8, border: '1px solid #21262d' }}>
+                <p style={{ margin: '0 0 12px', fontSize: 13, color: '#e6edf3', fontFamily: 'Lora', lineHeight: 1.6 }}>
+                  <strong style={{ fontFamily: 'Josefin Sans', fontSize: 11, color: '#8b949e', display: 'block', marginBottom: 4, letterSpacing: 1, textTransform: 'uppercase' }}>Query</strong>
+                  {t.query}
+                </p>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12, marginBottom: 12 }}>
+                  {[
+                    ['Retrieved at', fmt(t.retrieved_at)],
+                    ['Generated at', fmt(t.generated_at)],
+                    ['Model', t.model],
+                  ].map(([label, val]) => (
+                    <div key={label} style={{ padding: '8px 12px', background: '#161b22', borderRadius: 6 }}>
+                      <p style={{ margin: 0, fontSize: 10, color: '#484f58', letterSpacing: 1, textTransform: 'uppercase', fontFamily: 'Josefin Sans' }}>{label}</p>
+                      <p style={{ margin: '4px 0 0', fontSize: 12, color: '#8b949e', fontFamily: 'JetBrains Mono' }}>{val}</p>
+                    </div>
+                  ))}
+                </div>
+                <p style={{ margin: '0 0 8px', fontSize: 10, color: '#484f58', textTransform: 'uppercase', letterSpacing: 1, fontFamily: 'Josefin Sans' }}>Sources</p>
+                {t.sources.map(s => (
+                  <div key={s.rank} style={{ display: 'flex', gap: 10, alignItems: 'baseline', padding: '5px 0', borderBottom: '1px solid #21262d' }}>
+                    <span style={{ fontFamily: 'JetBrains Mono', fontSize: 10, color: '#2f81f7', width: 20 }}>#{s.rank}</span>
+                    <span style={{ fontSize: 12, color: '#c9d1d9', flex: 1 }}>{s.title}</span>
+                    <span style={{ fontFamily: 'JetBrains Mono', fontSize: 10, color: '#d29922' }}>{s.section_label}</span>
+                    <span style={{ fontFamily: 'JetBrains Mono', fontSize: 10, color: '#484f58' }}>{(s.score*100).toFixed(0)}%</span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+/* ── Timeline Tab ────────────────────────────────────────────────────────── */
+function TimelineTab({ traces }) {
+  if (traces.length === 0) {
+    return (
+      <div style={{ textAlign: 'center', padding: '80px 24px', color: '#484f58' }}>
+        <p style={{ fontFamily: 'JetBrains Mono', fontSize: 13 }}>No executions yet.</p>
+        <p style={{ fontSize: 12, marginTop: 8 }}>Send a message in the Chat tab to see pipeline timelines here.</p>
+      </div>
+    );
+  }
+
+  const maxLatency = Math.max(...traces.map(t => t.latencyMs));
+
+  return (
+    <div style={{ padding: '24px', overflowY: 'auto', height: '100%' }}>
+      <div style={{ maxWidth: 800, margin: '0 auto' }}>
+        <p style={{ fontSize: 11, color: '#484f58', fontFamily: 'JetBrains Mono', marginBottom: 24, letterSpacing: 1 }}>
+          PIPELINE BREAKDOWN · each bar shows retrieval (embed + search) vs generation time
+        </p>
+        {[...traces].reverse().map(t => {
+          const genMs = new Date(t.generated_at) - new Date(t.retrieved_at);
+          const retriMs = t.latencyMs - genMs;
+          const pctRetri = Math.max(2, (retriMs / t.latencyMs) * 100);
+          const pctGen   = Math.max(2, (genMs   / t.latencyMs) * 100);
+          const barWidth = (t.latencyMs / maxLatency) * 100;
+
+          return (
+            <div key={t.id} style={{ marginBottom: 28 }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 8 }}>
+                <p style={{ margin: 0, fontSize: 13, color: '#c9d1d9', maxWidth: '70%', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{t.query}</p>
+                <span style={{ fontFamily: 'JetBrains Mono', fontSize: 11, color: '#8b949e' }}>{fmtMs(t.latencyMs)}</span>
+              </div>
+              {/* Pipeline steps */}
+              <div style={{ display: 'flex', gap: 8, marginBottom: 8 }}>
+                {[
+                  { label: '1. Embed', color: '#388bfd', note: 'nomic-embed-text' },
+                  { label: '2. Search', color: '#238636', note: 'Qdrant top-5' },
+                  { label: '3. Generate', color: '#d29922', note: 'llama3.1:8b' },
+                ].map(step => (
+                  <div key={step.label} style={{ flex: 1, padding: '8px 12px', background: '#161b22', borderRadius: 6, borderLeft: `3px solid ${step.color}` }}>
+                    <p style={{ margin: 0, fontSize: 10, color: step.color, fontFamily: 'Josefin Sans', fontWeight: 700, letterSpacing: 0.5 }}>{step.label}</p>
+                    <p style={{ margin: '2px 0 0', fontSize: 10, color: '#484f58' }}>{step.note}</p>
+                  </div>
+                ))}
+              </div>
+              {/* Bar */}
+              <div style={{ height: 28, borderRadius: 6, overflow: 'hidden', background: '#161b22', position: 'relative' }}>
+                <div style={{ height: '100%', width: `${barWidth}%`, display: 'flex', minWidth: 4 }}>
+                  <div style={{ width: `${pctRetri}%`, background: '#1f4a8a', display: 'flex', alignItems: 'center', justifyContent: 'center', minWidth: 4 }}>
+                    {retriMs > 500 && <span style={{ fontSize: 9, color: '#388bfd', fontFamily: 'JetBrains Mono' }}>{fmtMs(retriMs)}</span>}
+                  </div>
+                  <div style={{ width: `${pctGen}%`, background: '#3d2b00', display: 'flex', alignItems: 'center', justifyContent: 'center', minWidth: 4 }}>
+                    {genMs > 500 && <span style={{ fontSize: 9, color: '#d29922', fontFamily: 'JetBrains Mono' }}>{fmtMs(genMs)}</span>}
+                  </div>
+                </div>
+              </div>
+              <div style={{ display: 'flex', gap: 16, marginTop: 6 }}>
+                <span style={{ fontSize: 10, color: '#388bfd', fontFamily: 'JetBrains Mono' }}>■ Retrieval {fmtMs(retriMs)}</span>
+                <span style={{ fontSize: 10, color: '#d29922', fontFamily: 'JetBrains Mono' }}>■ Generation {fmtMs(genMs)}</span>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+/* ── Evaluate Tab ────────────────────────────────────────────────────────── */
+const METRIC_META = {
+  faithfulness:      { label: 'Faithfulness',      desc: 'Hallucination resistance — answer grounded in context?', color: '#3fb950' },
+  answer_relevancy:  { label: 'Answer Relevancy',  desc: 'Does the answer actually address the question?',          color: '#388bfd' },
+  context_precision: { label: 'Context Precision', desc: 'Best chunks ranked first in retrieval?',                  color: '#d29922' },
+  context_recall:    { label: 'Context Recall',    desc: 'All relevant chunks retrieved?',                          color: '#bc8cff' },
+};
+
+function scoreColor(v) {
+  if (v == null) return '#484f58';
+  if (v >= 0.8)  return '#3fb950';
+  if (v >= 0.6)  return '#d29922';
+  return '#f85149';
+}
+
+function ScoreBar({ value }) {
+  if (value == null) return <span style={{ color: '#484f58', fontSize: 11, fontFamily: 'JetBrains Mono' }}>—</span>;
+  const pct = Math.round(value * 100);
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+      <div style={{ flex: 1, height: 4, background: '#21262d', borderRadius: 2, overflow: 'hidden' }}>
+        <div style={{ width: `${pct}%`, height: '100%', background: scoreColor(value), borderRadius: 2, transition: 'width .4s ease' }} />
+      </div>
+      <span style={{ fontSize: 12, fontFamily: 'JetBrains Mono', color: scoreColor(value), width: 36, textAlign: 'right' }}>
+        {pct}%
+      </span>
+    </div>
+  );
+}
+
+function RunButtons({ evalRun, onRunEval }) {
+  const running = evalRun.state === 'running';
+  const btnBase = {
+    padding: '9px 18px', borderRadius: 6, border: 'none', cursor: running ? 'not-allowed' : 'pointer',
+    fontSize: 12, fontFamily: 'Josefin Sans', letterSpacing: 0.5, transition: 'all .15s',
+    display: 'flex', alignItems: 'center', gap: 7, opacity: running ? 0.5 : 1,
+  };
+  return (
+    <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+      <button disabled={running} onClick={() => onRunEval('quick')}
+        style={{ ...btnBase, background: '#2f81f7', color: '#fff' }}>
+        {running && evalRun.mode === 'quick'
+          ? <><span style={{ display:'flex',gap:3 }}>{[0,1,2].map(i=><span key={i} className="dot" style={{width:4,height:4,borderRadius:'50%',background:'#fff'}}/>)}</span> Running…</>
+          : '⚡ Quick Eval (5 questions)'}
+      </button>
+      <button disabled={running} onClick={() => onRunEval('full')}
+        style={{ ...btnBase, background: '#21262d', color: '#8b949e', border: '1px solid #30363d' }}>
+        {running && evalRun.mode === 'full'
+          ? <><span style={{ display:'flex',gap:3 }}>{[0,1,2].map(i=><span key={i} className="dot" style={{width:4,height:4,borderRadius:'50%',background:'#8b949e'}}/>)}</span> Running…</>
+          : 'Full Eval (15 questions)'}
+      </button>
+    </div>
+  );
+}
+
+function RunningPanel({ evalRun }) {
+  if (evalRun.state !== 'running') return null;
+  const elapsed = evalRun.started_at
+    ? Math.round((Date.now() - new Date(evalRun.started_at)) / 1000)
+    : 0;
+  const mins = Math.floor(elapsed / 60), secs = elapsed % 60;
+  const log = (evalRun.log_tail || []).filter(l => l.trim());
+  return (
+    <div style={{ padding: '14px 18px', background: '#0f1a0f', border: '1px solid #238636', borderRadius: 8, marginTop: 16 }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <span style={{ display:'flex', gap:4 }}>
+            {[0,1,2].map(i => <span key={i} className="dot" style={{width:5,height:5,borderRadius:'50%',background:'#3fb950'}}/>)}
+          </span>
+          <span style={{ fontSize: 12, color: '#3fb950', fontWeight: 600 }}>
+            {evalRun.mode === 'quick' ? 'Quick eval' : 'Full eval'} running
+          </span>
+        </div>
+        <span style={{ fontSize: 11, color: '#484f58', fontFamily: 'JetBrains Mono' }}>
+          {mins}:{String(secs).padStart(2,'0')} elapsed
+        </span>
+      </div>
+      {log.length > 0 && (
+        <div style={{ background: '#0d1117', borderRadius: 4, padding: '8px 10px', maxHeight: 120, overflowY: 'auto' }}>
+          {log.slice(-8).map((line, i) => (
+            <div key={i} style={{ fontSize: 11, color: '#8b949e', fontFamily: 'JetBrains Mono', lineHeight: 1.6 }}>
+              {line}
+            </div>
+          ))}
+        </div>
+      )}
+      <p style={{ margin: '10px 0 0', fontSize: 11, color: '#484f58', fontFamily: 'JetBrains Mono' }}>
+        Results will load automatically when complete — no refresh needed.
+      </p>
+    </div>
+  );
+}
+
+function EvaluateTab({ evalRun, onRunEval }) {
+  const [data, setData]         = useState(null);
+  const [loading, setLoading]   = useState(true);
+  const [error, setError]       = useState(null);
+  const [expanded, setExpanded] = useState(null);
+
+  const fetchResults = useCallback(() => {
+    setLoading(true);
+    fetch('/eval_results.json')
+      .then(r => { if (!r.ok) throw new Error('not_found'); return r.json(); })
+      .then(d => { setData(d); setError(null); setLoading(false); })
+      .catch(e => { setError(e.message); setLoading(false); });
+  }, []);
+
+  // Initial load
+  useEffect(() => { fetchResults(); }, []);
+
+  // Auto-refresh when eval finishes
+  useEffect(() => {
+    if (evalRun.state === 'done') fetchResults();
+  }, [evalRun.state]);
+
+  if (loading) return (
+    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', color: '#484f58' }}>
+      <div style={{ textAlign: 'center' }}>
+        <div style={{ display: 'flex', gap: 5, justifyContent: 'center', marginBottom: 12 }}>
+          {[0,1,2].map(i => <div key={i} className="dot" style={{ width: 6, height: 6, borderRadius: '50%', background: '#2f81f7' }} />)}
+        </div>
+        <p style={{ fontFamily: 'JetBrains Mono', fontSize: 12 }}>Loading eval results…</p>
+      </div>
+    </div>
+  );
+
+  // No results yet
+  if (error === 'not_found' || !data) return (
+    <div style={{ padding: '40px 24px', overflowY: 'auto', height: '100%' }}>
+      <div style={{ maxWidth: 680, margin: '0 auto' }}>
+        <div style={{ padding: '20px 24px', background: '#161b22', borderRadius: 10, border: '1px solid #30363d', marginBottom: 24 }}>
+          <p style={{ margin: '0 0 6px', fontSize: 10, color: '#d29922', fontFamily: 'JetBrains Mono', letterSpacing: 1, textTransform: 'uppercase' }}>No results yet</p>
+          <h2 style={{ margin: '0 0 10px', fontSize: 18, color: '#e6edf3', fontWeight: 600 }}>Ragas Evaluation</h2>
+          <p style={{ margin: '0 0 16px', fontSize: 13, color: '#8b949e', lineHeight: 1.6 }}>
+            Score Lawra across faithfulness, answer relevancy, context precision, and context recall against a curated set of Singapore road traffic law questions.
+          </p>
+          <RunButtons evalRun={evalRun} onRunEval={onRunEval} />
+        </div>
+        <RunningPanel evalRun={evalRun} />
+        {evalRun.state === 'idle' && (
+          <p style={{ fontSize: 11, color: '#484f58', fontFamily: 'JetBrains Mono', marginTop: 16 }}>
+            Quick = 5 questions (~15 min) · Full = 15 questions (~45–90 min)
+          </p>
+        )}
+        {evalRun.state === 'error' && (
+          <div style={{ marginTop: 16, padding: '12px 16px', background: '#1a0f0f', border: '1px solid #f85149', borderRadius: 8 }}>
+            <p style={{ margin: 0, fontSize: 12, color: '#f85149', fontFamily: 'JetBrains Mono' }}>
+              Error: {evalRun.error}
+            </p>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+
+  const scores     = data.scores      || {};
+  const perQ       = data.per_question || [];
+  const metricKeys = Object.keys(METRIC_META).filter(k => scores[k] != null);
+  const runDate    = data.timestamp
+    ? new Date(data.timestamp).toLocaleString('en-SG', { dateStyle: 'medium', timeStyle: 'short' })
+    : data.run_id || '—';
+
+  return (
+    <div style={{ padding: '24px', overflowY: 'auto', height: '100%' }}>
+      <div style={{ maxWidth: 860, margin: '0 auto' }}>
+
+        {/* Header row */}
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 24, flexWrap: 'wrap', gap: 12 }}>
+          <div>
+            <h2 style={{ margin: '0 0 4px', fontSize: 16, color: '#e6edf3', fontWeight: 600 }}>Evaluation Results</h2>
+            <p style={{ margin: 0, fontSize: 11, color: '#8b949e', fontFamily: 'JetBrains Mono' }}>
+              {runDate} · {data.num_questions} questions · judge: {data.judge_model}
+            </p>
+          </div>
+          <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
+            {[['LLM', data.llm_model], ['Embed', data.embed_model]].map(([label, val]) => (
+              <div key={label} style={{ padding: '4px 10px', background: '#161b22', border: '1px solid #30363d', borderRadius: 6 }}>
+                <span style={{ fontSize: 9, color: '#484f58', textTransform: 'uppercase', letterSpacing: 1 }}>{label} </span>
+                <span style={{ fontSize: 11, color: '#8b949e', fontFamily: 'JetBrains Mono' }}>{val}</span>
+              </div>
+            ))}
+            <RunButtons evalRun={evalRun} onRunEval={onRunEval} />
+          </div>
+        </div>
+
+        <RunningPanel evalRun={evalRun} />
+
+        {/* Score cards */}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(190px, 1fr))', gap: 12, margin: '24px 0 32px' }}>
+          {metricKeys.map(key => {
+            const meta = METRIC_META[key], score = scores[key];
+            return (
+              <div key={key} style={{ padding: '16px 18px', background: '#161b22', borderRadius: 8, borderLeft: `3px solid ${meta.color}` }}>
+                <p style={{ margin: '0 0 2px', fontSize: 11, color: '#8b949e', textTransform: 'uppercase', letterSpacing: 0.5, fontFamily: 'Josefin Sans' }}>{meta.label}</p>
+                <p style={{ margin: '0 0 10px', fontSize: 28, fontWeight: 700, color: scoreColor(score), fontFamily: 'JetBrains Mono', lineHeight: 1.2 }}>
+                  {Math.round(score * 100)}<span style={{ fontSize: 14, fontWeight: 400 }}>%</span>
+                </p>
+                <p style={{ margin: 0, fontSize: 11, color: '#484f58', lineHeight: 1.4 }}>{meta.desc}</p>
+              </div>
+            );
+          })}
+        </div>
+
+        {/* Per-question table */}
+        {perQ.length > 0 && (
+          <>
+            <p style={{ margin: '0 0 12px', fontSize: 11, color: '#484f58', textTransform: 'uppercase', letterSpacing: 1, fontFamily: 'Josefin Sans' }}>
+              Per-question breakdown
+            </p>
+            <div style={{ background: '#161b22', borderRadius: 8, border: '1px solid #30363d', overflow: 'hidden' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: `1fr ${metricKeys.map(() => '90px').join(' ')}`, gap: '0 12px', padding: '10px 16px', borderBottom: '1px solid #21262d' }}>
+                <span style={{ fontSize: 10, color: '#484f58', fontFamily: 'JetBrains Mono', textTransform: 'uppercase' }}>Question</span>
+                {metricKeys.map(k => (
+                  <span key={k} style={{ fontSize: 10, color: '#484f58', fontFamily: 'JetBrains Mono', textTransform: 'uppercase', textAlign: 'right' }}>
+                    {METRIC_META[k].label.split(' ')[0]}
+                  </span>
+                ))}
+              </div>
+              {perQ.map((q, i) => (
+                <div key={i}>
+                  <div onClick={() => setExpanded(expanded === i ? null : i)}
+                    style={{ display: 'grid', gridTemplateColumns: `1fr ${metricKeys.map(() => '90px').join(' ')}`, gap: '0 12px',
+                      padding: '12px 16px', cursor: 'pointer', transition: 'background .1s',
+                      background: expanded === i ? '#1c2230' : 'transparent', borderBottom: '1px solid #21262d' }}
+                    onMouseEnter={e => { if (expanded!==i) e.currentTarget.style.background='#1a1f2e'; }}
+                    onMouseLeave={e => { if (expanded!==i) e.currentTarget.style.background='transparent'; }}>
+                    <span style={{ fontSize: 13, color: '#c9d1d9', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', paddingRight: 8 }}>{q.question}</span>
+                    {metricKeys.map(k => (
+                      <div key={k} style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end' }}>
+                        <span style={{ fontSize: 12, fontFamily: 'JetBrains Mono', color: scoreColor(q[k]) }}>
+                          {q[k] != null ? Math.round(q[k]*100)+'%' : '—'}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                  {expanded === i && (
+                    <div style={{ padding: '16px', background: '#0d1117', borderBottom: '1px solid #21262d' }}>
+                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 12 }}>
+                        <div>
+                          <p style={{ margin: '0 0 6px', fontSize: 10, color: '#484f58', textTransform: 'uppercase', letterSpacing: 1, fontFamily: 'Josefin Sans' }}>Answer</p>
+                          <p style={{ margin: 0, fontSize: 12, color: '#8b949e', fontFamily: 'Lora', lineHeight: 1.6 }}>{q.answer}</p>
+                        </div>
+                        <div>
+                          <p style={{ margin: '0 0 6px', fontSize: 10, color: '#484f58', textTransform: 'uppercase', letterSpacing: 1, fontFamily: 'Josefin Sans' }}>Ground Truth</p>
+                          <p style={{ margin: 0, fontSize: 12, color: '#8b949e', fontFamily: 'Lora', lineHeight: 1.6 }}>{q.ground_truth}</p>
+                        </div>
+                      </div>
+                      {metricKeys.length > 0 && (
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: 8 }}>
+                          {metricKeys.map(k => q[k] != null && (
+                            <div key={k} style={{ padding: '8px 12px', background: '#161b22', borderRadius: 6 }}>
+                              <p style={{ margin: '0 0 4px', fontSize: 10, color: '#484f58', fontFamily: 'Josefin Sans', textTransform: 'uppercase', letterSpacing: 0.5 }}>
+                                {METRIC_META[k].label}
+                              </p>
+                              <ScoreBar value={q[k]} />
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          </>
+        )}
+      </div>
+    </div>
+  );
+}
+
+/* ── App ─────────────────────────────────────────────────────────────────── */
+const TABS = [
+  { id: 'chat',     label: 'Chat' },
+  { id: 'trace',    label: 'Trace Log' },
+  { id: 'timeline', label: 'Timeline' },
+  { id: 'evaluate', label: 'Evaluate' },
+];
+
+function App() {
+  const [activeTab, setActiveTab] = useState('chat');
+  const [messages, setMessages]   = useState([]);
+  const [traces, setTraces]       = useState([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [evalRun, setEvalRun]     = useState({
+    state: 'idle', mode: null, started_at: null,
+    finished_at: null, error: null, log_tail: [],
+  });
+
+  // Poll /api/eval-status every 3s while an eval is running
+  useEffect(() => {
+    if (evalRun.state !== 'running') return;
+    const id = setInterval(() => {
+      fetch('/api/eval-status')
+        .then(r => r.json())
+        .then(s => setEvalRun(s))
+        .catch(() => {});
+    }, 3000);
+    return () => clearInterval(id);
+  }, [evalRun.state]);
+
+  const triggerEval = useCallback(async (mode) => {
+    try {
+      const r = await fetch('/api/run-eval', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ mode }),
+      });
+      const s = await r.json();
+      if (r.status === 409) { alert('Evaluation already running.'); return; }
+      setEvalRun({ state: 'running', mode, started_at: new Date().toISOString(),
+                   finished_at: null, error: null, log_tail: [] });
+    } catch (e) {
+      alert(`Could not start eval: ${e.message}\nMake sure you are running frontend/server.py, not python3 -m http.server.`);
+    }
+  }, []);
+
+  const onSend = useCallback(async (query) => {
+    if (isLoading) return;
+    const userMsg = { id: uid(), role: 'user', content: query };
+    setMessages(m => [...m, userMsg]);
+    setIsLoading(true);
+
+    const t0 = Date.now();
+    try {
+      const url = USE_MEMORY ? QUERY_URL : N8N_URL;
+      const res = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ query, session_id: SESSION_ID }),
+      });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const data = await res.json();
+      const latencyMs = Date.now() - t0;
+
+      const trace = {
+        id: uid(),
+        query,
+        time: fmt(new Date()),
+        latencyMs,
+        startedAt:       t0,
+        model:           data.trace?.model         ?? 'llama3.1:8b',
+        retrieved_count: data.trace?.retrieved_count ?? data.sources?.length ?? 0,
+        retrieved_at:    data.trace?.retrieved_at   ?? new Date().toISOString(),
+        generated_at:    data.trace?.generated_at   ?? new Date().toISOString(),
+        prompt_tokens:   data.trace?.prompt_tokens  ?? null,
+        eval_count:      data.trace?.eval_count     ?? null,
+        sources:         data.sources ?? [],
+        memory_hits:     data.memory?.hits          ?? 0,
+        memory_used:     data.memory?.context_used  ?? false,
+      };
+      setTraces(t => [...t, trace]);
+
+      const assistantMsg = {
+        id: uid(), role: 'assistant',
+        content: data.answer ?? 'No answer received.',
+        sources: data.sources ?? [],
+        trace,
+      };
+      setMessages(m => [...m, assistantMsg]);
+    } catch (err) {
+      setMessages(m => [...m, {
+        id: uid(), role: 'assistant',
+        content: `⚠️ Error: ${err.message}. Make sure n8n is running at ${N8N_URL} and the workflow is active.`,
+        sources: [], trace: null,
+      }]);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [isLoading]);
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', height: '100vh', background: '#0d1117' }}>
+      {/* Header */}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 24px', height: 56, borderBottom: '1px solid #21262d', flexShrink: 0, background: '#161b22' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          <div style={{ width: 28, height: 28, borderRadius: 6, background: '#2f81f715', border: '1px solid #2f81f730', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <span style={{ fontSize: 13, fontWeight: 700, color: '#2f81f7', fontFamily: 'Josefin Sans', letterSpacing: 1 }}>L</span>
+          </div>
+          <div>
+            <span style={{ fontSize: 15, fontWeight: 700, color: '#e6edf3', letterSpacing: 2, textTransform: 'uppercase' }}>Lawra</span>
+            <span style={{ fontSize: 10, color: '#484f58', marginLeft: 10, fontFamily: 'JetBrains Mono', letterSpacing: 0.5 }}>Singapore Road Traffic Law</span>
+          </div>
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+          <div style={{ width: 6, height: 6, borderRadius: '50%', background: '#3fb950' }} />
+          <span style={{ fontSize: 10, color: '#8b949e', fontFamily: 'JetBrains Mono' }}>{messages.filter(m=>m.role==='assistant').length} queries</span>
+        </div>
+      </div>
+
+      {/* Tab bar */}
+      <div style={{ display: 'flex', borderBottom: '1px solid #21262d', flexShrink: 0, background: '#161b22', paddingLeft: 24 }}>
+        {TABS.map(tab => (
+          <button key={tab.id} onClick={() => setActiveTab(tab.id)}
+            style={{ padding: '10px 18px', background: 'none', border: 'none', cursor: 'pointer',
+              fontSize: 13, fontFamily: 'Josefin Sans', letterSpacing: 0.5,
+              color: activeTab === tab.id ? '#e6edf3' : '#8b949e',
+              borderBottom: `2px solid ${activeTab === tab.id ? '#2f81f7' : 'transparent'}`,
+              transition: 'all .15s', marginBottom: -1 }}>
+            {tab.label}
+            {tab.id === 'trace' && traces.length > 0 && (
+              <span style={{ marginLeft: 6, fontSize: 10, background: '#21262d', padding: '1px 6px', borderRadius: 10, fontFamily: 'JetBrains Mono' }}>
+                {traces.length}
+              </span>
+            )}
+          </button>
+        ))}
+      </div>
+
+      {/* Content */}
+      <div style={{ flex: 1, overflow: 'hidden' }}>
+        {activeTab === 'chat'     && <ChatTab messages={messages} onSend={onSend} isLoading={isLoading} />}
+        {activeTab === 'trace'    && <TraceLogTab traces={traces} />}
+        {activeTab === 'timeline' && <TimelineTab traces={traces} />}
+        {activeTab === 'evaluate' && <EvaluateTab evalRun={evalRun} onRunEval={triggerEval} />}
+      </div>
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+</script>
+</body>
+</html>
