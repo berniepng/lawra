@@ -9,6 +9,7 @@
 qdrant_storage/
 postgres_data/
 n8n_data/
+.chromadb/
 
 # ── Ingestion dry-run artifacts ───────────────────────────────────────────
 *_chunks_preview.json
